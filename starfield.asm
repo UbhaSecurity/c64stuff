@@ -1,10 +1,4 @@
-        .org $0801
-
-        ; BASIC header
-        .byte $0C, $08, $08, $00, $9E, $32, $30, $36, $31, $32, $00
-
-        ; Machine code
-        .org $080D
+        .org $C000
 
 start   lda #$00          ; Initialize background color to black
         sta $D021
