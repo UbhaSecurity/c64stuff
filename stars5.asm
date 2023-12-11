@@ -245,27 +245,24 @@ rnd
     tax
     rts
 
-exit_message
-    lda #$14          ; Clear the screen (PETSCII code for clear screen)
-    jsr $ffd2         ; Call the KERNAL routine to output character
+check_exit_key
+    lda #$EF           ; Set bit 4 to input (11101111)
+    sta $DC02          ; Set column for SPACE key (Column 4)
+    lda $DC01          ; Read row data
+    and #$80           ; Check only bit 7 (Row 7, where SPACE key is located)
+    beq no_exit        ; Branch if SPACE key is not pressed
 
-    lda #0            ; Set X-coordinate for the message (0-39)
-    ldx #12           ; Set Y-coordinate for the message (0-24)
-    jsr set_cursor    ; Call routine to set the cursor position
+    ; Call exit_message subroutine when SPACE key is pressed
+    jsr exit_message   ; Call the exit_message subroutine
+    jmp clean_exit     ; Jump to clean exit routine
 
-    ldx #0            ; Reset X to start reading the message from the beginning
-message_loop
-    lda exit_text, x  ; Load a character from the exit message
-    beq message_done  ; Check for the end of the message (null terminator)
-    jsr $ffd2         ; Output the character to the screen
-    inx               ; Move to the next character
-    jmp message_loop  ; Continue looping
+no_exit
+    rts               ; Return without exiting if SPACE key is not pressed
 
-message_done
-    rts               ; Return from subroutine
-
-exit_text
-    !text "Exiting Program",0
+; Clean exit routine
+clean_exit
+    ; Add logic here to clear the screen, reset system settings, etc.
+    jmp $A474          ; Jump to BASIC warm start vector
 
 ; Routine to set the cursor position
 set_cursor
