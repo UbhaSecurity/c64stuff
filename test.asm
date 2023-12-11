@@ -1,30 +1,20 @@
-* = $0801  ; Set the start address
+* = $0801
 
-; BASIC loader to run the machine code
+; BASIC header
 !byte $0C, $08, $0A, $00, $9E, $32, $30, $38, $31, $34, $00, $00, $00
 
-* = $0814  ; Start address for the machine code
+* = $0814
 
 ; Entry point
 start:
-    jmp clearScreen  ; Jump to clearScreen subroutine
+    lda #$02        ; Load a value to change the border color
+    sta $d020       ; Change the border color
+    lda #$01        ; Load a value to change the background color
+    sta $d021       ; Change the background color
 
-; Clear screen subroutine
-clearScreen:
-    lda #$00
-    sta $d020   ; Set the border color to black
-    sta $d021   ; Set the background color to black
-
-    ldx #$00
-clearLoop:
-    lda #$20    ; Space character
-    sta $0400,x
-    inx
-    bne clearLoop
-    cpx #$E8    ; Check if all 1000 characters are cleared (40 columns x 25 rows)
-    bcc clearLoop
-
-    rts  ; Return from subroutine
+    ; Infinite loop to prevent the program from returning to BASIC
+infiniteLoop:
+    jmp infiniteLoop
 
 ; Unused memory for padding
 * = $0900
