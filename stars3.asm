@@ -137,6 +137,125 @@ move_next_star
        bcc move_next_star
        rts
 
+set_color
+    lda y_pos, y ; / 8 
+    lsr 
+    lsr 
+    lsr 
+    tax
+    lda y_screen_h, x ; Lookup *40 table
+    sta color_h
+    lda y_screen, x
+    sta color
+    lda x_pos_h, y ; / 8
+    lsr ; (x < 320)
+    lda x_pos, y
+    ror
+    lsr
+    lsr
+    clc
+    adc color
+    sta color
+    lda #04 ; Add final carry and $0400
+    adc color_h
+    sta color_h
+    lda y_pos, y ; Use low 4 bits for color
+    asl 
+    asl
+    asl
+    asl
+    cmp #0
+    bne save_color; Proceed for normal colors
+    lda #16 ; Set black stars to white
+save_color
+    sta screen_color
+    tya ; now set color in screen memory
+    pha
+    ldy #0
+    lda (color), y
+    and #%00001111
+    ora screen_color
+    sta (color), y
+    pla
+    tay
+    rts
+
+
+plot_star
+    lda y_pos, y 
+    lsr ; /8
+    lsr
+    lsr 
+    sta cursor_h ; high = y / 8 * 256
+    sta cursor
+    lda #0
+    ldx #6; low = y / 8 * 64
+y_low_mul
+    asl cursor 
+    rol 
+    dex
+    bne y_low_mul
+    clc
+    adc cursor_h
+    sta cursor_h
+    lda y_pos, y
+    and #%00000111
+    clc
+    adc cursor
+    sta cursor
+    lda cursor_h
+    adc #0
+    sta cursor_h
+    lda x_pos, y
+    and #%11111000
+    clc
+    adc cursor
+    sta cursor
+    lda cursor_h
+    adc x_pos_h, y
+    sta cursor_h
+    lda x_pos, y 
+    and #%00000111
+    tax ; Lose contents of x
+    lda cursor_h ; add video offset
+    clc
+    adc #$20 
+    sta cursor_h
+    tya
+    pha
+    ldy #0
+    lda (cursor), y
+    ora x_bit_set, x      
+    sta (cursor), y
+    pla
+    tay
+    rts
+
+update_velocity
+    ldx #0
+update_vel
+    lda y_pos, x        ; Load the Y position of the current star
+    and #%00000001      ; Isolate the least significant bit
+    clc                 ; Clear the carry flag for addition
+    adc #1              ; Add 1 (so velocity is either 1 or 2)
+    sta velocity, x     ; Store the updated velocity
+
+    lda x_pos, x        ; Load the X position of the current star
+    clc                 ; Clear the carry flag for addition
+    adc velocity, x     ; Add the velocity to the X position
+    sta x_pos, x        ; Store the new X position
+
+    lda x_pos_h, x      ; Load the high byte of the X position
+    adc #0              ; Add carry, if any, from the previous addition
+    sta x_pos_h, x      ; Store the new high byte of the X position
+
+    inx                 ; Move to the next star
+    cpx #size           ; Check if all stars have been updated
+    bcc update_vel      ; If not, loop back to update the next star
+    rts                 ; Return from subroutine
+
+
+
 update_star_colors
     ldx #0
 update_color
