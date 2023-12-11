@@ -1,83 +1,71 @@
-* = $801
-; Sample BASIC program required to start our code
-!byte $0C, $08, $0A, $00
-!byte $9E ; sys
-!text "2068 :-)"
-!byte $00, $00, $00, $00
+* = $0801  ; Set the start address
 
-* = $0814
+; BASIC loader to run the program
+!byte $0C, $08, $0A, $00, $9E, $20, $30, $36, $38, $30, $00, $00, $00
 
-; Starfield simulation code starts here
-; Initialize variables
-lda #$00 ; Initialize X position (horizontal)
-sta $d020 ; Set background color (black)
-sta $d021 ; Set border color (black)
-lda #$0C ; Initialize delay counter
-sta delay
+* = $080D  ; Start address for the actual code
 
-; Main loop
+; Variables
+starX = $40
+starY = $41
+delay = $42
+
+* = $0814  ; Start address for the code
+
+; Starfield simulation code
 mainLoop:
-; Update star positions
-jsr getRandom ; Get a random value (0-255)
-and #$07 ; Keep the lower 3 bits (0-7)
-sta starX ; Store it as the new X position
-jsr getRandom ; Get another random value
-and #$07 ; Keep the lower 3 bits (0-7)
-sta starY ; Store it as the new Y position
+    lda #0      ; Initialize X position (horizontal)
+    sta starX
+    lda #$0C    ; Initialize delay counter
+    sta delay
 
-; Calculate screen memory address for star
-lda starY
-asl ; Multiply Y by 2 (each character is 2 bytes)
-asl
-sta starAddressL ; Store low byte of address
-lda starX
-sta starAddressH ; Store high byte of address
+drawLoop:
+    lda starX   ; Get the X position
+    jsr plotStar
 
-; Draw star at the new position
-ldx delay
+    lda starY   ; Get the Y position
+    jsr plotStar
 
-drawStarLoop:
-lda #$20 ; Space character
-sta $0400,x ; Write space to screen memory
-sta $0401,x ; Write space to color memory
-dex
-bne drawStarLoop
+    jsr delayLoop ; Delay loop
+
+    lda starX   ; Clear the star
+    jsr plotStar
+
+    lda starY
+    jsr plotStar
+
+    jsr delayLoop ; Delay loop
+
+    jmp drawLoop
+
+; Plot a star at the given X and Y position
+plotStar:
+    sta $0400, x ; Set the pixel in the screen memory
+    lda starY
+    sta $0401, x ; Set the color of the pixel
+    rts
 
 ; Delay loop
 delayLoop:
-dex
-bne delayLoop
+    ldx delay
+delayLoopInner:
+    dex
+    bne delayLoopInner
+    rts
 
-; Clear the star
-ldx starAddressL
-lda #$20 ; Space character
-sta $0400,x ; Clear the screen memory
-sta $0401,x ; Clear the color memory
+; Initialize variables
+init:
+    lda #$00
+    sta starX
+    sta starY
+    lda #$0C
+    sta delay
+    rts
 
-; Repeat the loop
-jmp mainLoop
+; Entry point
+start:
+    jsr init
+    jmp mainLoop
 
-; Random number generator (simple XOR-based)
-getRandom:
-lda $ea31 ; Load value from address $EA31
-eor $ea31+1 ; XOR it with the next byte
-ror ; Rotate right (shifts in a random bit)
-sta $ea31 ; Store the result back to $EA31
-ror ; Rotate right again
-rts
-
-; Delay value for controlling star movement speed
-delay:
-!byte $0C
-
-; Variables for star position and address
-starX:
-!byte $00
-starY:
-!byte $00
-starAddressL:
-!byte $00
-starAddressH:
-!byte $00
-
-* = $9E00
+; Unused memory for padding
+* = $0900
