@@ -49,12 +49,12 @@ updateStars
 updateLoop
         lda $d012          ; Get raster line (vertical blank)
         cmp #129           ; Check if in the lower half of the screen
-        bcc .skip          ; If not, skip the update
-        lda $d020          ; Get the current X position of the star
+        bcc skipUpdate     ; If not, skip the update
+        lda $d020, x       ; Get the current X position of the star
         clc
         adc #1             ; Move star to the right
-        sta $d020
-.skip
+        sta $d020, x
+skipUpdate
         inx
         cpx #8             ; Check if we've updated all 8 stars
         bne updateLoop
