@@ -30,10 +30,11 @@ move_loop
       jsr move_stars
       jsr update_star_colors
       jsr check_exit_key  ; Check for exit condition
-vsync_wait      
-      lda $d012
-      bne vsync_wait
-      jmp move_loop
+vsync_wait
+    lda $d012
+    cmp #60            ; Check if raster line is at the top of the screen
+    bne vsync_wait     ; If not, keep waiting
+    rts                ; If yes, proceed with the code
 
 init
     lda $d018
@@ -47,18 +48,11 @@ init
     sta $d011
 
     ; Initialize variables
-    ldx #0
-init_vars
+    lda #0               ; Set initial X coordinate
+    sta cursor           ; Set cursor to point to the start of the screen memory
     lda #0
-    sta x_pos, x
-    sta x_pos_h, x
-    sta y_pos, x
-    sta cursor_buffer, x
-    sta cursor_buffer_h, x
-    sta bitmask_buffer, x
-    inx
-    cpx #size
-    bcc init_vars
+    sta cursor_h         ; Set cursor_h high byte to 0 (since we're using low-res)
+    ; Initialize other variables as needed
 
     rts
 
