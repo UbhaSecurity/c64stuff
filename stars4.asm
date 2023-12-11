@@ -280,6 +280,48 @@ y_low_mul
     tay               ; Transfer it to Y
     rts               ; Return from the subroutine
 
+set_color
+    lda y_pos, y ; / 8 
+    lsr 
+    lsr 
+    lsr 
+    tax
+    lda y_screen_h, x ; Lookup *40 table
+    sta color_h
+    lda y_screen, x
+    sta color
+    lda x_pos_h, y ; / 8
+    lsr ; (x < 320)
+    lda x_pos, y
+    ror
+    lsr
+    lsr
+    clc
+    adc color
+    sta color
+    lda #04 ; Add final carry and $0400
+    adc color_h
+    sta color_h
+    lda y_pos, y ; Use low 4 bits for color
+    asl 
+    asl
+    asl
+    asl
+    cmp #0
+    bne save_color; Proceed for normal colors
+    lda #16 ; Set black stars to white
+save_color
+    sta screen_color
+    tya ; now set color in screen memory
+    pha
+    ldy #0
+    lda (color), y
+    and #%00001111
+    ora screen_color
+    sta (color), y
+    pla
+    tay
+    rts
 
 
 x_bit_set
