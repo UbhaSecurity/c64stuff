@@ -1,56 +1,131 @@
-* = $C000
+* = $801
+; Sample BASIC program required to start the code
+!byte $0c,$08,$0a,$00
+!byte $9e ; sys
+!text "2068 :-)"
+!byte $00,$00,$00,$00
 
-start   lda #$00          ; Initialize background color to black
-        sta $D021
-        lda #$2E          ; Set character for stars
-        sta $D018
+* = $0814
 
-main    jsr init          ; Initialize star field
-loop    jsr updateStars   ; Update star positions
-        jsr drawStars     ; Draw stars on the screen
-        jsr waitFrame     ; Wait for the next frame
-        jmp loop          ; Repeat
+; Starfield simulation code starts here
+; Initialize variables
+lda #$00      ; Initialize X position (horizontal)
+sta $d020     ; Set background color (black)
+sta $d021     ; Set border color (black)
+lda #$0C      ; Initialize delay counter
+sta delay
 
-init    ldx #$00         ; Clear screen memory and color memory
-clear   lda #$20
-        sta $0400, x
-        sta $D800, x
-        inx
-        cpx #$1F          ; Check if we've cleared the entire screen
-        bne clear
-        rts
+; Main loop
+mainLoop:
+  ; Update star positions
+  lda random   ; Get a random value (0-255)
+  and #$07     ; Keep the lower 3 bits (0-7)
+  sta starX    ; Store it as the new X position
+  lda random   ; Get another random value
+  and #$07     ; Keep the lower 3 bits (0-7)
+  sta starY    ; Store it as the new Y position
 
-updateStars
-        ldx #$00
-updateLoop
-        lda $D012          ; Get raster line (vertical blank)
-        cmp #$81           ; Check if in the lower half of the screen
-        bcc skipUpdate     ; If not, skip the update
-        lda $D020, x       ; Get the current X position of the star
-        clc
-        adc #$01           ; Move star to the right
-        sta $D020, x
-skipUpdate
-        inx
-        cpx #$08           ; Check if we've updated all 8 stars
-        bne updateLoop
-        rts
+  ; Draw star at the new position
+  lda starX
+  sta $0400,x  ; Set the pixel in the screen memory
+  lda starY
+  sta $0401,x  ; Set the color of the pixel
 
-drawStars
-        ldx #$00
-drawLoop
-        lda $D020, x       ; Get the X position of the star
-        sta $0400, x       ; Set the star position on the screen
-        lda #$01           ; Set star color to white
-        sta $D800, x       ; Set the star color in color memory
-        inx
-        cpx #$08           ; Check if we've drawn all 8 stars
-        bne drawLoop
-        rts
+  ; Delay loop
+  ldx delay
+delayLoop:
+  dex
+  bne delayLoop
 
-waitFrame
-        lda $D012           ; Check the VIC-II raster register
-waitLoop
-        cmp $D012           ; Wait until it's different from the current value
-        beq waitLoop
-        rts
+  ; Clear the pixel (remove the star)
+  lda starX
+  sta $0400,x  ; Clear the pixel in the screen memory
+  sta $0401,x  ; Clear the color of the pixel
+
+  ; Delay loop
+  ldx delay
+clearLoop:
+  dex
+  bne clearLoop
+
+  ; Repeat the loop
+  jmp mainLoop
+
+; Random number generator (simple XOR-based)
+random:
+  lda $ea31    ; Load value from address $EA31
+  eor $ea31+1  ; XOR it with the next byte
+  ror         ; Rotate right (shifts in a random bit)
+  sta $ea31    ; Store the result back to $EA31
+  ror         ; Rotate right again
+  sta $ea31+1  ; Store the result back to $EA31+1
+  ror         ; Rotate right once more
+  ror         ; Rotate right again
+  ror         ; Rotate right one last time
+  ror         ; Rotate right one more time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one last time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+  ror         ; Rotate right one final time
+
+; Delay value for controlling star movement speed
+delay:
+  .byte $0C
+
+; Variables for star position
+starX:
+  .byte $00
+
+starY:
+  .byte $00
+
+* = $9E00
+; Additional code and data can be placed here if needed
