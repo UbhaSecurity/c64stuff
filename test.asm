@@ -5,7 +5,12 @@
 
 * = $0814  ; Start address for the machine code
 
-; Clear screen code
+; Entry point
+start:
+    jmp clearScreen  ; Jump to clearScreen subroutine
+
+; Clear screen subroutine
+clearScreen:
     lda #$00
     sta $d020   ; Set the border color to black
     sta $d021   ; Set the background color to black
@@ -20,10 +25,6 @@ clearLoop:
     bcc clearLoop
 
     rts  ; Return from subroutine
-
-; Entry point
-start:
-    jmp clearScreen  ; Clear the screen
 
 ; Unused memory for padding
 * = $0900
