@@ -1,9 +1,14 @@
-*=$0801
+processor   6502
+org    $1000
 
-!byte $0d,$08,$d9,$07,$9e,$20,$34,$39
-!byte $31,$35,$32,$00,$00,$00
-
-*=$c000
-
-inc $d020
-jmp $c000
+lda #$00
+sta $d020
+sta $d021
+tax
+lda #$20
+loop:   sta $0400,x
+sta $0500,x
+sta $0600,x
+sta $0700,x
+dex
+bne loop
