@@ -29,19 +29,21 @@ move_loop
       jsr draw_stars
       jsr move_stars
       jsr update_star_colors
-      jsr check_exit_key ; Check if SPACE bar is pressed
-      jsr wait_frame
+      jsr check_exit_key  ; Check for exit condition
+vsync_wait      
+      lda $d012
+      bne vsync_wait
       jmp move_loop
 
 init
     lda $d018
-    ora #$8 ; Set video base to 8192
+    ora #$8              ; Set video base to 8192
     sta $d018
 
-    lda #0 ; color
-    sta $d020 ; set border color
+    lda #0               ; Set accumulator to 0 (black)
+    sta $d020            ; Set border color to black
     lda $d011
-    ora #$20 ; set high res mode
+    ora #$20            ; Set high-resolution mode
     sta $d011
     rts
 
@@ -55,11 +57,11 @@ videoloop
       lda #0
       sta (cursor), y
       iny
-      bne videoloop ; loop unless high bit needs inc
+      bne videoloop      ; Loop unless high bit needs increment
       inc cursor_h
-      lda cursor_h ; check end of range
-      cmp #$40 ; 8000 bytes
-      beq blank_screen ; finished
+      lda cursor_h       ; Check end of range
+      cmp #$40           ; 8000 bytes
+      beq blank_screen   ; Finished
       jmp videoloop
       rts
 
@@ -87,14 +89,14 @@ next_star
 draw_stars
       ldy #0
 draw_star
-      jsr plot_star ; Plot star index y, return with pixel bit index in x
+      jsr plot_star       ; Plot star index y, return with pixel bit index in x
       txa
       pha
-      jsr set_color ; Set color in screen memory using star at index y 
+      jsr set_color      ; Set color in screen memory using star at index y 
       pla
       tax
       lda cursor_buffer_h, y
-      beq save_cursor ; Skip if buffer is empty
+      beq save_cursor    ; Skip if buffer is empty
       sta cursor_clear_h
       lda cursor_buffer, y
       sta cursor_clear
@@ -104,17 +106,17 @@ draw_star
       pha
       ldy #0
       lda (cursor_clear), y
-      and bitmask_clear ; clear star
+      and bitmask_clear  ; Clear star
       sta (cursor_clear), y
       pla
       tay
 save_cursor
       lda cursor
-      sta cursor_buffer, y ; store coordinate in buffer
+      sta cursor_buffer, y ; Store coordinate in buffer
       lda cursor_h
       sta cursor_buffer_h, y
       lda x_bit_clear, x
-      sta bitmask_buffer, y ; store bitmask in buffer
+      sta bitmask_buffer, y ; Store bitmask in buffer
       iny
       cpy #size
       bcc draw_star
@@ -123,7 +125,7 @@ save_cursor
 move_stars
        ldx #0
 move_next_star
-       jsr update_velocity ; Update velocity
+       jsr update_velocity  ; Update velocity
        lda x_pos, x
        clc
        adc velocity, x
@@ -135,49 +137,6 @@ move_next_star
        cpx #size
        bcc move_next_star
        rts
-
-set_color
-    lda y_pos, y ; / 8 
-    lsr 
-    lsr 
-    lsr 
-    tax
-    lda y_screen_h, x ; Lookup *40 table
-    sta color_h
-    lda y_screen, x
-    sta color
-    lda x_pos_h, y ; / 8
-    lsr ; (x < 320)
-    lda x_pos, y
-    ror
-    lsr
-    lsr
-    clc
-    adc color
-    sta color
-    lda #04 ; Add final carry and $0400
-    adc color_h
-    sta color_h
-    lda y_pos, y ; Use low 4 bits for color
-    asl 
-    asl
-    asl
-    asl
-    cmp #0
-    bne save_color; Proceed for normal colors
-    lda #16 ; Set black stars to white
-save_color
-    sta screen_color
-    tya ; now set color in screen memory
-    pha
-    ldy #0
-    lda (color), y
-    and #%00001111
-    ora screen_color
-    sta (color), y
-    pla
-    tay
-    rts
 
 update_velocity
     ldx #0
@@ -201,21 +160,6 @@ update_vel
     cpx #size           ; Check if all stars have been updated
     bcc update_vel      ; If not, loop back to update the next star
     rts                 ; Return from subroutine
-
-check_exit_key
-    lda $dc0d           ; Read the keyboard matrix column 0
-    and #%00000001      ; Check the SPACE key
-    beq no_exit         ; If SPACE key is not pressed, continue
-    jmp exit_program    ; If SPACE key is pressed, exit the program
-no_exit
-    rts
-
-wait_frame
-    lda $d012            ; Wait for a vertical blank (vsync)
-wait_loop
-    cmp $d012
-    beq wait_loop
-    rts
 
 update_star_colors
     ldx #0
@@ -242,14 +186,6 @@ color_loop_done
 
     ; Implement your color enhancement logic here
 
-    rts
-
-exit_program
-    lda $ff00    ; Load the value at address $ff00
-    ora #$01     ; Set the lowest bit (C64's cold start flag)
-    sta $ff00    ; Store it back
-    lda $ffd2    ; Perform a warm reset
-    jsr $fce2    ; Execute the reset routine
     rts
 
 init_star
@@ -285,6 +221,66 @@ rnd
     pla
     tax
     rts
+
+check_exit_key
+    lda $dc0d          ; Read the keyboard status register
+    and #%00000001    ; Mask off all but the least significant bit (SPACE key)
+    beq no_exit       ; If SPACE key is not pressed, continue
+    rts               ; If SPACE key is pressed, return to exit the program
+no_exit
+    rts               ; If SPACE key is not pressed, return without exiting
+
+plot_star
+    lda y_pos, y       ; Load the Y position of the star
+    lsr               ; Divide by 8 (equivalent to shifting right 3 times)
+    lsr
+    lsr
+    sta cursor_h      ; Store the result in cursor_h (high byte of cursor)
+    sta cursor        ; Also store it in cursor (low byte of cursor)
+    lda #0            ; Initialize X-coordinate multiplier
+    ldx #6            ; Load X with 6 (number of times to shift left)
+y_low_mul
+    asl cursor        ; Shift cursor left (effectively multiplying it by 2)
+    rol               ; Rotate left through carry (multiply by 2)
+    dex               ; Decrement X
+    bne y_low_mul     ; Repeat until X becomes zero
+    clc               ; Clear carry flag
+    adc cursor_h      ; Add cursor_h to the result
+    sta cursor_h      ; Store the final high byte of cursor
+    lda y_pos, y      ; Load Y position again
+    and #%00000111    ; Mask off all but the 3 least significant bits
+    clc               ; Clear carry flag
+    adc cursor        ; Add cursor (low byte of cursor)
+    sta cursor        ; Store the final low byte of cursor
+    lda cursor_h      ; Load high byte of cursor
+    adc #0            ; Add carry, if any, from the previous addition
+    sta cursor_h      ; Store the updated high byte of cursor
+    lda x_pos, y      ; Load X position of the star
+    and #%11111000    ; Mask off the 3 least significant bits
+    clc               ; Clear carry flag
+    adc cursor        ; Add cursor (low byte of cursor)
+    sta cursor        ; Store the final low byte of cursor
+    lda cursor_h      ; Load high byte of cursor
+    adc x_pos_h, y    ; Add the high byte of X position
+    sta cursor_h      ; Store the updated high byte of cursor
+    lda x_pos, y      ; Load X position again
+    and #%00000111    ; Mask off all but the 3 least significant bits
+    tax               ; Transfer X to the index register (X)
+    lda cursor_h      ; Load high byte of cursor
+    clc               ; Clear carry flag
+    adc #$20          ; Add $20 for the video offset
+    sta cursor_h      ; Store the updated high byte of cursor
+    tya               ; Transfer Y to the accumulator
+    pha               ; Push it onto the stack
+    ldy #0            ; Initialize Y to zero
+    lda (cursor), y   ; Load the byte from screen memory at the cursor position
+    ora x_bit_set, x  ; OR with the appropriate pixel bit in the lookup table
+    sta (cursor), y   ; Store the result back in screen memory
+    pla               ; Pull the original Y value from the stack
+    tay               ; Transfer it to Y
+    rts               ; Return from the subroutine
+
+
 
 x_bit_set
     !byte $80,$40,$20,$10,$08,$04,$02,$01
