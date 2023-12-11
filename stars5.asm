@@ -297,13 +297,50 @@ clean_exit
     jmp $A474          ; Jump to BASIC warm start vector
 
 ; Routine to set the cursor position
+; X-register: X-coordinate (0-39)
+; Y-register: Y-coordinate (0-24)
+
 set_cursor
-    ldy #0            ; Set Y to 0, used as the accumulator in the KERNAL call
-    jsr $ffd2         ; Call KERNAL routine to output character (clear screen)
-    lda #157          ; PETSCII code for cursor left
-    sta $d020         ; Store at cursor control register
-    sta $d021         ; Store at cursor control register
-    rts               ; Return from subroutine
+    sty $d6             ; Store Y-coordinate in temporary location
+    tya                 ; Transfer Y-coordinate to accumulator
+    asl                 ; Multiply Y by 2
+    asl                 ; Multiply Y by 4 (total Y*8)
+    clc                 ; Clear carry for addition
+    adc $d6             ; Add original Y (total Y*8 + Y = Y*9)
+    tax                 ; Transfer result to X-register
+    lda #0              ; Clear accumulator for multiplication
+    ldy #40             ; Set Y for multiplication by 40 (row width)
+    jsr mul_8bit        ; Call multiplication subroutine (result in A and X)
+    tay                 ; Transfer high byte to Y-register
+    clc                 ; Clear carry for addition
+    adc $d020           ; Add X-coordinate (low byte)
+    bcc no_carry        ; Branch if no carry
+    iny                 ; Increment high byte if there was a carry
+no_carry
+    sta $d021           ; Store low byte in temporary location
+    lda $d021           ; Load low byte of screen memory address
+    sta $d1           ; Store in CIA 1 data port A (keyboard matrix column)
+    lda $d020           ; Load high byte of screen memory address
+    sta $d1             ; Store in CIA 1 data port B (keyboard matrix row)
+    rts                 ; Return from subroutine
+
+; 8-bit multiplication subroutine
+; Multiplies A by Y, result in A (low byte) and X (high byte)
+mul_8bit
+    ldx #0              ; Clear high byte of result
+mul_loop
+    bcc skip_add        ; Skip addition if carry is clear
+    clc                 ; Clear carry for addition
+    adc $d020           ; Add multiplicand to low byte of result
+    bcc no_carry_add    ; Branch if no carry from addition
+    inx                 ; Increment high byte if there was a carry
+no_carry_add
+skip_add
+    asl $d020           ; Shift multiplicand left
+    rol                 ; Rotate result left through carry
+    dey                 ; Decrement multiplier
+    bne mul_loop        ; Repeat until multiplier is zero
+    rts                 ; Return from subroutine
 
 plot_star
     lda y_pos, y       ; Load the Y position of the star
