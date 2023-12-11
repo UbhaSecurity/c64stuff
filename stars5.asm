@@ -57,7 +57,13 @@ blank_video
     cpy #25              ; Check if we've cleared all 25 rows (adjust as needed)
     bcc blank_video      ; Repeat until all rows are cleared
     rts
-  
+
+; Clear screen subroutine
+clear_screen
+    lda #$93           ; Load the 'Clear Screen' PETSCII code
+    jsr $FFD2          ; Call the KERNAL routine to output character
+    rts                ; Return from subroutine
+
 videoloop
       lda #0
       sta (cursor), y
