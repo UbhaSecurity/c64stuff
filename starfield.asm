@@ -18,10 +18,10 @@ sta delay
 ; Main loop
 mainLoop:
 ; Update star positions
-lda random ; Get a random value (0-255)
+jsr getRandom ; Get a random value (0-255)
 and #$07 ; Keep the lower 3 bits (0-7)
 sta starX ; Store it as the new X position
-lda random ; Get another random value
+jsr getRandom ; Get another random value
 and #$07 ; Keep the lower 3 bits (0-7)
 sta starY ; Store it as the new Y position
 
@@ -37,10 +37,14 @@ ldx delay
 ; Draw star at the new position
 lda #$07 ; White color
 sta $d021 ; Set border color to white
+ldy #$20 ; Space character
 stx $0400 ; Set X register to screen address
-lda #$20 ; Space character
-sta $0400,x ; Write space to screen memory
-sta $0401,x ; Write white color to color memory
+
+drawStarLoop:
+sta $0400,y ; Write space to screen memory
+sta $0401,y ; Write white color to color memory
+dey
+bpl drawStarLoop
 
 ; Delay loop
 delayLoop:
@@ -56,12 +60,13 @@ stx $0401,x ; Clear the color memory
 jmp mainLoop
 
 ; Random number generator (simple XOR-based)
-random:
+getRandom:
 lda $ea31 ; Load value from address $EA31
 eor $ea31+1 ; XOR it with the next byte
 ror ; Rotate right (shifts in a random bit)
 sta $ea31 ; Store the result back to $EA31
 ror ; Rotate right again
+rts
 
 ; Delay value for controlling star movement speed
 delay:
