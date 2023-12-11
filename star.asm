@@ -138,28 +138,32 @@ move_next_star
        rts
 
 update_star_colors
-      ldx #0
+      ldx #0  ; Initialize x to 0
 update_color
-      lda cursor_buffer_h, x
-      beq color_loop_done ; Skip if buffer is empty
-      lda cursor_buffer, x
-      ldy x
+      lda cursor_buffer_h, x  ; Load high byte of cursor position for star 'x'
+      beq color_loop_done    ; Skip if buffer is empty
+      lda cursor_buffer, x    ; Load low byte of cursor position for star 'x'
+
+      ; Use 'x' to index into color arrays
+      tax  ; Transfer x to y to use it for indexing
       lda color_h, y
       sta screen_color
       lda color, y
-      tya
-      pha
-      lda (color), y
-      and #%00001111
-      ora screen_color
-      sta (color), y
-      pla
-      tay
+      tay  ; Transfer accumulator to y for further operations
+
+      ; Now set color in screen memory
+      pha  ; Preserve A
+      lda (color), y  ; Load the screen memory byte
+      and #%00001111  ; Mask out the high nibble
+      ora screen_color  ; OR with the new color
+      sta (color), y  ; Store it back
+      pla  ; Restore A
+      tay  ; Restore Y
 color_loop_done
-      inx
-      cpx #size
-      bcc update_color
-      rts
+      inx  ; Increment x for the next star
+      cpx #size  ; Compare x with the total number of stars
+      bcc update_color  ; Branch if x is less than size
+      rts  ; Return from subroutine
 
 update_velocity
       ldx #0
