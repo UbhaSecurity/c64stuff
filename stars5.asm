@@ -246,15 +246,18 @@ rnd
     rts
 
 check_exit_key
-    lda #$EF           ; Set bit 4 to input (11101111)
-    sta $DC02          ; Set column for SPACE key (Column 4)
-
     lda $DC01          ; Read row data
     and #$80           ; Check only bit 7 (Row 7, where SPACE key is located)
     beq no_exit        ; Branch if SPACE key is not pressed
-    rts               ; If SPACE key is pressed, return to exit the program
+
+    ; Handle exit here
+    jsr cleanup       ; Perform any necessary cleanup tasks
+    jsr exit_message  ; Display an exit message (you'll need to implement this)
+    jmp $FFD2         ; Execute the BASIC system warm start
+
 no_exit
     rts               ; If SPACE key is not pressed, return without exiting
+
 
 plot_star
     lda y_pos, y       ; Load the Y position of the star
