@@ -32,19 +32,16 @@ asl
 sta starAddressL ; Store low byte of address
 lda starX
 sta starAddressH ; Store high byte of address
-ldx delay
 
 ; Draw star at the new position
-lda #$07 ; White color
-sta $d021 ; Set border color to white
-ldy #$20 ; Space character
-stx $0400 ; Set X register to screen address
+ldx delay
 
 drawStarLoop:
-sta $0400,y ; Write space to screen memory
-sta $0401,y ; Write white color to color memory
-dey
-bpl drawStarLoop
+lda #$20 ; Space character
+sta $0400,x ; Write space to screen memory
+sta $0401,x ; Write space to color memory
+dex
+bne drawStarLoop
 
 ; Delay loop
 delayLoop:
@@ -53,8 +50,9 @@ bne delayLoop
 
 ; Clear the star
 ldx starAddressL
-stx $0400,x ; Clear the screen memory
-stx $0401,x ; Clear the color memory
+lda #$20 ; Space character
+sta $0400,x ; Clear the screen memory
+sta $0401,x ; Clear the color memory
 
 ; Repeat the loop
 jmp mainLoop
