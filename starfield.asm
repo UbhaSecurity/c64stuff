@@ -18,14 +18,11 @@ clearScreen:
 
     ldx #$00
 clearLoop:
-    ldy #$00
-innerLoop:
     lda #$20    ; Space character
-    sta $0400,x,y
-    iny
-    bne innerLoop
+    sta $0400,x
     inx
-    cpx #$28    ; Check if we've cleared 40 columns
+    bne clearLoop
+    cpx #$E8    ; Check if all 1000 characters are cleared (40 columns x 25 rows)
     bcc clearLoop
 
 ; Starfield simulation code starts here
@@ -59,13 +56,13 @@ randomPosition:
 ; Plot a star at the given X and Y position
 plotStar:
     lda #$2A        ; '*' character
-    sta ($0400), y  ; Plot the star at the position
+    sta $0400, x    ; Plot the star at the position
     rts
 
 ; Clear a star at the given X and Y position
 clearStar:
     lda #$20        ; Space character
-    sta ($0400), y  ; Clear the star at the position
+    sta $0400, x    ; Clear the star at the position
     rts
 
 ; Entry point
