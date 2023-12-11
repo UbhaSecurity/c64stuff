@@ -155,14 +155,6 @@ update_color
     sta (color), y
     pla
     tay
-color_loop_done
-    inx
-    cpx #size
-    bcc update_color
-
-    ; Implement your color enhancement logic here
-
-    rts
 
 color_loop_done
     inx
@@ -293,23 +285,7 @@ save_color
     tay
     rts
 
-init_star
-    lda #0
-    sta x_pos_h, x
-    jsr rnd
-    lda $d012        ; Use current raster line for randomness
-    and #%00111111   ; Get a more random value for X
-    clc
-    adc x_pos, x
-    sta x_pos, x
-    lda #0
-    adc x_pos_h, x
-    sta x_pos_h, x
-    jsr rnd
-    lda $d012        ; Use current raster line for randomness
-    and #%11000000   ; Get a different random value for Y
-    sta y_pos, x
-    rts
+
 
 regen_y
     jsr rnd
