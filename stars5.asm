@@ -45,6 +45,21 @@ init
     lda $d011
     ora #$20            ; Set high-resolution mode
     sta $d011
+
+    ; Initialize variables
+    ldx #0
+init_vars
+    lda #0
+    sta x_pos, x
+    sta x_pos_h, x
+    sta y_pos, x
+    sta cursor_buffer, x
+    sta cursor_buffer_h, x
+    sta bitmask_buffer, x
+    inx
+    cpx #size
+    bcc init_vars
+
     rts
 
 blank_video
