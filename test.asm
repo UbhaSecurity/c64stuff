@@ -1,20 +1,20 @@
-* = $0801
+!cpu 6502
+!to "build/hello.prg",cbm
+* = $0801                               ; BASIC starts at #2049
+!byte $0d,$08,$dc,$07,$9e,$20,$34,$39   ; BASIC to load $c000
+!byte $31,$35,$32,$00,$00,$00           ; inserts BASIC line: 2012 SYS 49152
+* = $c000     				            ; start address for 6502 code
 
-; BASIC header
-!byte $0C, $08, $0A, $00, $9E, $32, $30, $38, $31, $34, $00, $00, $00
+JSR $E544
+loop jsr init_text      ; write line of text
+jmp loop				; infinite loop
 
-* = $0814
+message   !scr "              hello world!              "	;40 cols of text
 
-; Entry point
-start:
-    lda #$02        ; Load a value to change the border color
-    sta $d020       ; Change the border color
-    lda #$01        ; Load a value to change the background color
-    sta $d021       ; Change the background color
-
-    ; Infinite loop to prevent the program from returning to BASIC
-infiniteLoop:
-    jmp infiniteLoop
-
-; Unused memory for padding
-* = $0900
+init_text  ldx #$00         ; init X-Register with $00
+loop_text  lda message,x    ; read characters from message text...
+           sta $0590,x      ; ...and place it into screen screen memory
+           inx 				; increment to next character
+           cpx #$28         ; false if != 40
+           bne loop_text    ; loop if false
+           rts
