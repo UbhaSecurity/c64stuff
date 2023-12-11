@@ -48,11 +48,16 @@ init
     rts
 
 blank_video
-      lda #$00
-      sta cursor
-      lda #$20
-      sta cursor_h
-      ldy #0      
+    ldy #0               ; Initialize Y to 0
+    lda #32               ; Load the space character (PETSCII code)
+    ldx #0               ; Initialize X to 0
+    lda #0                ; Load accumulator with 0 (clear screen attribute)
+    jsr $FFD2            ; Call KERNAL routine to output character
+    iny                  ; Increment Y (move to the next row)
+    cpy #25              ; Check if we've cleared all 25 rows (adjust as needed)
+    bcc blank_video      ; Repeat until all rows are cleared
+    rts
+  
 videoloop
       lda #0
       sta (cursor), y
