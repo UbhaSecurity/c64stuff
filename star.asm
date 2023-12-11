@@ -35,16 +35,16 @@ vsync_wait
       jmp move_loop
 
 init
-      lda $d018
-      ora #$8 ; Set video base to 8192
-      sta $d018 
+    lda $d018
+    ora #$8 ; Set video base to 8192
+    sta $d018
 
-      lda #0 ; color
-      sta $d020; set border color
-      lda $d011
-      ora #$20 ; set high res mode
-      sta $d011 
-      rts
+    lda #0 ; color
+    sta $d020 ; set border color
+    lda $d011
+    ora #$20 ; set high res mode
+    sta $d011
+    rts
 
 blank_video
       lda #$00
