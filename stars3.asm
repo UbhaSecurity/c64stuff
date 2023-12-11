@@ -29,9 +29,8 @@ move_loop
       jsr draw_stars
       jsr move_stars
       jsr update_star_colors
-vsync_wait      
-      lda $d012
-      bne vsync_wait
+      jsr check_exit_key ; Check if SPACE bar is pressed
+      jsr wait_frame
       jmp move_loop
 
 init
@@ -254,33 +253,19 @@ update_vel
     bcc update_vel      ; If not, loop back to update the next star
     rts                 ; Return from subroutine
 
+check_exit_key
+    lda $dc0d           ; Read the keyboard matrix column 0
+    and #%00000001      ; Check the SPACE key
+    beq no_exit         ; If SPACE key is not pressed, continue
+    jmp exit_program    ; If SPACE key is pressed, exit the program
+no_exit
+    rts
 
-
-update_star_colors
-    ldx #0
-update_color
-    lda cursor_buffer_h, x
-    beq color_loop_done
-    lda cursor_buffer, x
-    tax
-    lda color_h, y
-    sta screen_color
-    lda color, y
-    tay
-    pha
-    lda (color), y
-    and #%00001111
-    ora screen_color
-    sta (color), y
-    pla
-    tay
-color_loop_done
-    inx
-    cpx #size
-    bcc update_color
-
-    ; Implement your color enhancement logic here
-
+wait_frame
+    lda $d012            ; Wait for a vertical blank (vsync)
+wait_loop
+    cmp $d012
+    beq wait_loop
     rts
 
 init_star
