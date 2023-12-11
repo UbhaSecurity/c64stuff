@@ -104,6 +104,7 @@ draw_star
       txa
       pha
       jsr set_color      ; Set color in screen memory using star at index y 
+      jsr color_enhancement_logic  ; Call the color enhancement logic
       pla
       tax
       lda cursor_buffer_h, y
