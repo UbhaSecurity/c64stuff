@@ -188,6 +188,29 @@ color_loop_done
 
     rts
 
+color_enhancement_logic
+    ldx #0                ; Initialize X index to 0
+enhance_color_loop
+    lda x_pos, x         ; Load X position of the star
+    clc                  ; Clear the carry flag
+    adc y_pos, x         ; Add Y position to X position
+    and #%00000111       ; Mask off all but the 3 least significant bits
+    tax                  ; Transfer the result to X index
+    lda color_h, x       ; Load the high byte of color based on position
+    sta screen_color     ; Store it as the screen color
+    lda color, x         ; Load the low byte of color based on position
+    tay                  ; Transfer it to Y
+    pha                  ; Push it onto the stack
+    lda (color), y       ; Load the color from the color lookup table
+    and #%00001111       ; Mask off all but the 4 least significant bits
+    ora screen_color     ; OR with the screen color
+    sta (color), y       ; Store the updated color in the lookup table
+    pla                  ; Pull the original Y value from the stack
+    tay                  ; Transfer it back to Y
+    inx                  ; Increment X index for the next star
+    cpx #size            ; Check if all stars have been processed
+    bcc enhance_color_loop ; If not, repeat the loop
+    rts                  ; Return from the subroutine
 init_star
     lda #0
     sta x_pos_h, x
@@ -223,9 +246,12 @@ rnd
     rts
 
 check_exit_key
-    lda $dc0d          ; Read the keyboard status register
-    and #%00000001    ; Mask off all but the least significant bit (SPACE key)
-    beq no_exit       ; If SPACE key is not pressed, continue
+    lda #$EF           ; Set bit 4 to input (11101111)
+    sta $DC02          ; Set column for SPACE key (Column 4)
+
+    lda $DC01          ; Read row data
+    and #$80           ; Check only bit 7 (Row 7, where SPACE key is located)
+    beq no_exit        ; Branch if SPACE key is not pressed
     rts               ; If SPACE key is pressed, return to exit the program
 no_exit
     rts               ; If SPACE key is not pressed, return without exiting
@@ -322,7 +348,6 @@ save_color
     pla
     tay
     rts
-
 
 x_bit_set
     !byte $80,$40,$20,$10,$08,$04,$02,$01
