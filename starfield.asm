@@ -1,87 +1,73 @@
 * = $0801  ; Set the start address
 
 ; BASIC loader to run the program
-!byte $0C, $08, $0A, $00, $9E, $20, $30, $36, $38, $30, $00, $00, $00
+!byte $0C, $08, $0A, $00, $9E, $20, $33, $32, $37, $31, $00, $00, $00
 
 * = $0814  ; Start address for the code
 
 ; Variables
-starX = $40
-starY = $41
-delay = $42
+starX = $FC   ; Temporary storage for X position of star
+starY = $FD   ; Temporary storage for Y position of star
+delay = $FE   ; Delay counter
 
 ; Clear screen code
 clearScreen:
-    lda #$00     ; Set the border color to black
-    sta $d020
-    sta $d021
+    lda #$00
+    sta $d020   ; Set the border color to black
+    sta $d021   ; Set the background color to black
 
-    ldx #0       ; Initialize X for the screen clear loop
-
+    ldx #$00
 clearLoop:
-    lda #$20     ; Set the character to SPACE
-    sta $0400, x ; Set the pixel in the screen memory
-    sta $0500, x
-    sta $0600, x
-    sta $0700, x
-    inx          ; Increment X
-    cpx #64      ; Check if we have cleared 256 characters (64 * 4)
+    lda #$20    ; Space character
+    sta $0400,x
+    inx
+    bne clearLoop
+    cpx #$F4    ; Check if all 1000 characters are cleared
     bcc clearLoop
 
 ; Starfield simulation code starts here
 mainLoop:
-    lda #0      ; Initialize X position (horizontal)
+    jsr randomPosition ; Get a random position for the star
     sta starX
-    lda #$0C    ; Initialize delay counter
-    sta delay
-
-drawLoop:
-    lda starX   ; Get the X position
-    jsr plotStar
-
-    lda starY   ; Get the Y position
-    jsr plotStar
-
-    jsr delayLoop ; Delay loop
-
-    lda starX   ; Clear the star
-    jsr plotStar
-
     lda starY
-    jsr plotStar
+    jsr plotStar      ; Plot the star
 
-    jsr delayLoop ; Delay loop
+    ldx #50          ; Set delay
+delayLoop:
+    dex
+    bne delayLoop
 
-    jmp drawLoop
+    lda starX
+    lda starY
+    jsr clearStar    ; Clear the star
+
+    jmp mainLoop
+
+; Generate random X and Y positions for the star
+randomPosition:
+    lda $D012        ; Random number from the C64
+    and #$27         ; Limit X to screen width
+    sta starX
+    lda $D012        ; Random number for Y
+    and #$18         ; Limit Y to screen height
+    sta starY
+    rts
 
 ; Plot a star at the given X and Y position
 plotStar:
-    sta $0400, x ; Set the pixel in the screen memory
-    lda starY
-    sta $0401, x ; Set the color of the pixel
+    lda #$2A        ; '*' character
+    sta ($0400), y  ; Plot the star at the position
     rts
 
-; Delay loop
-delayLoop:
-    ldx delay
-delayLoopInner:
-    dex
-    bne delayLoopInner
-    rts
-
-; Initialize variables
-init:
-    lda #$00
-    sta starX
-    sta starY
-    lda #$0C
-    sta delay
+; Clear a star at the given X and Y position
+clearStar:
+    lda #$20        ; Space character
+    sta ($0400), y  ; Clear the star at the position
     rts
 
 ; Entry point
 start:
-    jsr clearScreen  ; Clear the screen to black and SPACE characters
-    jsr init     
+    jsr clearScreen  ; Clear the screen
     jmp mainLoop
 
 ; Unused memory for padding
