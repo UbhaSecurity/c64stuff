@@ -245,38 +245,36 @@ rnd
     tax
     rts
 
-check_exit_key
-    lda #$EF           ; Set bit 4 to input (11101111)
-    sta $DC02          ; Set column for SPACE key (Column 4)
-    lda $DC01          ; Read row data
-    and #$80           ; Check only bit 7 (Row 7, where SPACE key is located)
-    beq no_exit        ; Branch if SPACE key is not pressed
-
-    ; Call exit_message subroutine when SPACE key is pressed
-    jsr exit_message   ; Call the exit_message subroutine
-
-    ; Additional code to exit the program (if needed)
-
-no_exit
-    rts               ; Return without exiting if SPACE key is not pressed
-
 exit_message
-    lda #$07        ; Color code (white on black)
-    sta $d020       ; Set border color to white
-    ldx #0
+    lda #$14          ; Clear the screen (PETSCII code for clear screen)
+    jsr $ffd2         ; Call the KERNAL routine to output character
+
+    lda #0            ; Set X-coordinate for the message (0-39)
+    ldx #12           ; Set Y-coordinate for the message (0-24)
+    jsr set_cursor    ; Call routine to set the cursor position
+
+    ldx #0            ; Reset X to start reading the message from the beginning
 message_loop
-    lda exit_text, x ; Load a character from the exit message
-    beq message_done ; If the character is null terminator, exit
-    jsr $ffd2        ; Output the character to the screen
-    inx              ; Move to the next character
-    jmp message_loop ; Continue looping
+    lda exit_text, x  ; Load a character from the exit message
+    beq message_done  ; Check for the end of the message (null terminator)
+    jsr $ffd2         ; Output the character to the screen
+    inx               ; Move to the next character
+    jmp message_loop  ; Continue looping
 
 message_done
-    rts
+    rts               ; Return from subroutine
 
 exit_text
     !text "Exiting Program",0
 
+; Routine to set the cursor position
+set_cursor
+    ldy #0            ; Set Y to 0, used as the accumulator in the KERNAL call
+    jsr $ffd2         ; Call KERNAL routine to output character (clear screen)
+    lda #157          ; PETSCII code for cursor left
+    sta $d020         ; Store at cursor control register
+    sta $d021         ; Store at cursor control register
+    rts               ; Return from subroutine
 
 plot_star
     lda y_pos, y       ; Load the Y position of the star
