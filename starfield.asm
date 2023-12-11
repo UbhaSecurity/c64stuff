@@ -18,11 +18,14 @@ clearScreen:
 
     ldx #$00
 clearLoop:
+    ldy #$00
+innerLoop:
     lda #$20    ; Space character
-    sta $0400,x
+    sta $0400,x,y
+    iny
+    bne innerLoop
     inx
-    bne clearLoop
-    cpx #$F4    ; Check if all 1000 characters are cleared
+    cpx #$28    ; Check if we've cleared 40 columns
     bcc clearLoop
 
 ; Starfield simulation code starts here
