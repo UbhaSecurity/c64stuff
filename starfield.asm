@@ -1,6 +1,3 @@
-; Simple Star Field Simulation for Commodore 64
-; Press SPACE to exit
-
         .org $0801
 
         ; BASIC header
@@ -26,6 +23,7 @@ clear   lda #$20
         sta $0400, x
         sta $D800, x
         inx
+        cpx #$1F          ; Check if we've cleared the entire screen
         bne clear
         rts
 
