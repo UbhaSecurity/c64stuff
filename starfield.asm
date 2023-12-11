@@ -13,14 +13,13 @@ WHITE   = $01
 BLACK   = $00
 
         ; Start address
-        .org $0801
-        .word $0801
+        !to $0801
 
         ; BASIC header
         .byte $0C, $08, "STARFIELD", $00
 
         ; Machine code
-        .org $080D
+        !to $080D
 
 start   lda #BLACK         ; Set background color to black
         sta $D021
@@ -90,9 +89,9 @@ nmiHandler
         rti
 
 ; Initialize RAM and vectors
-        .org $0314
+        !to $0314
         .word start        ; Autostart address
         .word irqHandler   ; IRQ handler address
         .word nmiHandler   ; NMI handler address
 
-        .end
+        !to $0801
