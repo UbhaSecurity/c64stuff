@@ -159,26 +159,35 @@ color_loop_done
     inx
     cpx #size
     bcc update_color
+
+    ; Implement your color enhancement logic here
+
     rts
 
-update_velocity
-    ldx #0
-update_vel
-    lda y_pos, x ; velocity of 1 or 2 based on y position
-    and #%00000001
-    clc
-    adc #1           ; Increase velocity slightly for smoother movement
-    sta velocity, x
-    lda x_pos, x
-    clc
-    adc velocity, x
-    sta x_pos, x
-    bcs continue_move
-    lda x_pos_h, x
-    beq new_star
-    sbc #0
+color_loop_done
+    inx
+    cpx #size
+    bcc update_color
+    rts
+
+init_star
+    lda #0
     sta x_pos_h, x
-    jmp continue_move
+    jsr rnd
+    lda $d012        ; Use current raster line for randomness
+    and #%00111111   ; Get a more random value for X
+    clc
+    adc x_pos, x
+    sta x_pos, x
+    lda #0
+    adc x_pos_h, x
+    sta x_pos_h, x
+    jsr rnd
+    lda $d012        ; Use current raster line for randomness
+    and #%11000000   ; Get a different random value for Y
+    sta y_pos, x
+    rts
+
 new_star
     jsr regen_y
     lda #63 ; move x to pos 319
@@ -301,6 +310,7 @@ init_star
     and #%11000000   ; Get a different random value for Y
     sta y_pos, x
     rts
+
 
 regen_y
     jsr rnd
