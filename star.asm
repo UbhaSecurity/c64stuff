@@ -1,5 +1,5 @@
 *=$0801
-  !byte $0c,$08,$0a,$00,$9e,$20,$32,$33,$30,$34,$00,$00,$00 ; basic auto start at $0900 
+!byte $0c,$08,$0a,$00,$9e,$20,$32,$33,$30,$34,$00,$00,$00 ; BASIC auto start at $0900 
 
 screen_color = $f7;
 color = $f8;
@@ -28,6 +28,7 @@ size = 32
 move_loop
       jsr draw_stars
       jsr move_stars
+      jsr update_star_colors ; Enhanced color logic
 vsync_wait      
       lda $d012
       bne vsync_wait
@@ -90,7 +91,7 @@ draw_star
       jsr plot_star ; Plot star index y, return with pixel bit index in x
       txa
       pha
-      jsr set_color ; Set colour in screen memory using star at index y 
+      jsr set_color ; Set color in screen memory using star at index y 
       pla
       tax
       lda cursor_buffer_h, y
@@ -122,41 +123,79 @@ save_cursor
       
 move_stars
        ldx #0
-move_next
-       lda y_pos, x ; velocity of 1 or 2 based on y position
-       and #%00000001
-       clc
-       adc #1
-       sta velocity
+move_next_star
+       jsr update_velocity ; Update velocity
        lda x_pos, x
-       sec
-       sbc velocity
+       clc
+       adc velocity, x
        sta x_pos, x
-       bcs continue_move
        lda x_pos_h, x
-       beq new_star
-       sbc #0
+       adc #0
        sta x_pos_h, x
-       jmp continue_move
-new_star
-       jsr regen_y
-       lda #63 ; move x to pos 319
-       sta x_pos, x
-       lda #1
-       sta x_pos_h, x
-continue_move       
        inx
        cpx #size
-       bcc move_next
+       bcc move_next_star
        rts
 
+update_star_colors
+      ldx #0
+update_color
+      lda cursor_buffer_h, x
+      beq color_loop_done ; Skip if buffer is empty
+      lda cursor_buffer, x
+      ldy x
+      lda color_h, y
+      sta screen_color
+      lda color, y
+      tya
+      pha
+      lda (color), y
+      and #%00001111
+      ora screen_color
+      sta (color), y
+      pla
+      tay
+color_loop_done
+      inx
+      cpx #size
+      bcc update_color
+      rts
+
+update_velocity
+      ldx #0
+update_vel
+      lda y_pos, x ; velocity of 1 or 2 based on y position
+      and #%00000001
+      clc
+      adc #1
+      sta velocity
+      lda x_pos, x
+      sec
+      sbc velocity
+      sta x_pos, x
+      bcs continue_move
+      lda x_pos_h, x
+      beq new_star
+      sbc #0
+      sta x_pos_h, x
+      jmp continue_move
+new_star
+      jsr regen_y
+      lda #63 ; move x to pos 319
+      sta x_pos, x
+      lda #1
+      sta x_pos_h, x
+continue_move
+      inx
+      cpx #size
+      bcc update_vel
+      rts
+
 plot_star
-      ; Calculate y
       lda y_pos, y 
       lsr ; /8
       lsr
       lsr 
-      ; * 320
       sta cursor_h ; high = y / 8 * 256
       sta cursor
       lda #0
@@ -169,7 +208,6 @@ y_low_mul
       clc
       adc cursor_h
       sta cursor_h
-      ; Add y mod 8
       lda y_pos, y
       and #%00000111
       clc
@@ -178,7 +216,6 @@ y_low_mul
       lda cursor_h
       adc #0
       sta cursor_h
-      ; Add x minus last 3 bits
       lda x_pos, y
       and #%11111000
       clc
@@ -187,7 +224,6 @@ y_low_mul
       lda cursor_h
       adc x_pos_h, y
       sta cursor_h
-      ; Lookup bit position based on last 3 bits
       lda x_pos, y 
       and #%00000111
       tax ; Lose contents of x
@@ -246,10 +282,9 @@ save_color
       sta (color), y
       pla
       tay
-
       rts
-      
-init_star ; generate new star at offset x
+
+init_star
       lda #0
       sta x_pos_h, x
       jsr rnd
@@ -271,7 +306,7 @@ regen_y
       sta y_pos, x
       rts
       
-rnd ; call basic random generator, preserving x
+rnd
       txa
       pha
       jsr $e09a
@@ -293,3 +328,4 @@ y_screen_h
       !byte $01,$01,$01,$01,$01,$02,$02,$02
       !byte $02,$02,$02,$02,$02,$03,$03,$03
       !byte $03
+
