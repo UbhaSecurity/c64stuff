@@ -1,9 +1,9 @@
 * = $801
 ; Sample BASIC program required to start our code
-!byte $0c,$08,$0a,$00
-!byte $9e ; sys
+!byte $0C, $08, $0A, $00
+!byte $9E ; sys
 !text "2068 :-)"
-!byte $00,$00,$00,$00
+!byte $00, $00, $00, $00
 
 * = $0814
 
@@ -25,28 +25,32 @@ lda random ; Get another random value
 and #$07 ; Keep the lower 3 bits (0-7)
 sta starY ; Store it as the new Y position
 
-; Draw star at the new position
-lda starX
-sta $0400,x ; Set the pixel in the screen memory
+; Calculate screen memory address for star
 lda starY
-sta $0401,x ; Set the color of the pixel
+asl ; Multiply Y by 2 (each character is 2 bytes)
+asl
+sta starAddressL ; Store low byte of address
+lda starX
+sta starAddressH ; Store high byte of address
+ldx delay
+
+; Draw star at the new position
+lda #$07 ; White color
+sta $d021 ; Set border color to white
+stx $0400 ; Set X register to screen address
+lda #$20 ; Space character
+sta $0400,x ; Write space to screen memory
+sta $0401,x ; Write white color to color memory
 
 ; Delay loop
-ldx delay
 delayLoop:
 dex
 bne delayLoop
 
-; Clear the pixel (remove the star)
-lda starX
-sta $0400,x ; Clear the pixel in the screen memory
-sta $0401,x ; Clear the color of the pixel
-
-; Delay loop
-ldx delay
-clearLoop:
-dex
-bne clearLoop
+; Clear the star
+ldx starAddressL
+stx $0400,x ; Clear the screen memory
+stx $0401,x ; Clear the color memory
 
 ; Repeat the loop
 jmp mainLoop
@@ -63,11 +67,14 @@ ror ; Rotate right again
 delay:
 !byte $0C
 
-; Variables for star position
+; Variables for star position and address
 starX:
 !byte $00
-
 starY:
+!byte $00
+starAddressL:
+!byte $00
+starAddressH:
 !byte $00
 
 * = $9E00
