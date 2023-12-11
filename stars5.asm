@@ -258,6 +258,23 @@ check_exit_key
 no_exit
     rts               ; If SPACE key is not pressed, return without exiting
 
+exit_message
+    lda #$07        ; Color code (white on black)
+    sta $d020       ; Set border color to white
+    ldx #0
+message_loop
+    lda exit_text, x ; Load a character from the exit message
+    beq message_done ; If the character is null terminator, exit
+    jsr $ffd2        ; Output the character to the screen
+    inx              ; Move to the next character
+    jmp message_loop ; Continue looping
+
+message_done
+    rts
+
+exit_text
+    !text "Exiting Program",0
+
 
 plot_star
     lda y_pos, y       ; Load the Y position of the star
