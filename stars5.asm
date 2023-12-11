@@ -177,14 +177,23 @@ update_color
     and #%00001111
     ora screen_color
     sta (color), y
+
+    ; Implement color enhancement logic based on velocity
+    lda velocity, x       ; Load velocity of the current star
+    cmp #2                ; Compare with a threshold (e.g., 2)
+    bcc normal_color      ; If velocity is less than 2, use normal color
+
+    ; For faster-moving stars (velocity >= 2), change the color
+    lda #$0F              ; Set a different color (e.g., bright white)
+    sta (color), y
+
+normal_color
     pla
     tay
 color_loop_done
     inx
     cpx #size
     bcc update_color
-
-    ; Implement your color enhancement logic here
 
     rts
 
