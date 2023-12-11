@@ -246,17 +246,19 @@ rnd
     rts
 
 check_exit_key
+    lda #$EF           ; Set bit 4 to input (11101111)
+    sta $DC02          ; Set column for SPACE key (Column 4)
     lda $DC01          ; Read row data
     and #$80           ; Check only bit 7 (Row 7, where SPACE key is located)
     beq no_exit        ; Branch if SPACE key is not pressed
 
-    ; Handle exit here
-    jsr cleanup       ; Perform any necessary cleanup tasks
-    jsr exit_message  ; Display an exit message (you'll need to implement this)
-    jmp $FFD2         ; Execute the BASIC system warm start
+    ; Call exit_message subroutine when SPACE key is pressed
+    jsr exit_message   ; Call the exit_message subroutine
+
+    ; Additional code to exit the program (if needed)
 
 no_exit
-    rts               ; If SPACE key is not pressed, return without exiting
+    rts               ; Return without exiting if SPACE key is not pressed
 
 exit_message
     lda #$07        ; Color code (white on black)
