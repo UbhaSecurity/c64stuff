@@ -279,6 +279,17 @@ check_exit_key
 no_exit
     rts               ; Return without exiting if SPACE key is not pressed
 
+; Define the exit_message subroutine here
+exit_message
+    ; Add your code here to display an exit message or perform other actions
+    ; You can use screen codes or PETSCII codes to display the message
+    ; For example:
+    lda #13            ; PETSCII code for Return (CR)
+    jsr $ffd2          ; Output the character to the screen
+    lda #10            ; PETSCII code for Line Feed (LF)
+    jsr $ffd2          ; Output the character to the screen
+    rts               ; Return from the subroutine
+
 ; Clean exit routine
 clean_exit
     ; Add logic here to clear the screen, reset system settings, etc.
