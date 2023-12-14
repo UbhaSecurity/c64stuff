@@ -59,20 +59,38 @@ init
 
     rts
 
+; The blank_screen subroutine is responsible for clearing the screen memory and color memory.
+; It fills the screen with spaces and sets the color of each character cell.
+; Bounds checking is included to prevent writing past the screen and color memory areas.
 blank_screen
-    ldx #$00        ; Initialize X to 0
-    ldy #$00        ; Initialize Y to 0 (for the high byte)
-clear_loop:
-    lda #$20        ; Space character (clears the screen)
-    sta $0400,x     ; Write to screen memory
-    sta $d800,x     ; Write to color memory (use the correct color index)
-    inx
-    bne clear_loop  ; Branch always due to page boundary crossing
-    inc cursor_h    ; Increment high byte of cursor for screen memory
-    inc cursor_clear_h    ; Increment high byte of cursor for color memory
-    cpy #$28        ; Compare Y with the high byte after 1000 bytes
-    bne clear_loop
-    rts
+    ldx #$00           ; Initialize X to 0, will be used to index the screen memory
+    ldy #$00           ; Initialize Y to 0, will be used as the high byte index for loops
+
+clear_screen_loop:
+    lda #$20           ; Load the space character to clear the screen
+    sta $0400,x        ; Write to screen memory at position X
+    sta $d800,x        ; Write to color memory at position X
+    inx                ; Increment X to move to the next screen memory location
+    bne clear_screen_loop ; If X did not overflow, continue the loop
+    inc cursor_h       ; Increment the high byte of the cursor address for screen memory
+    inc cursor_clear_h ; Increment the high byte of the cursor address for color memory
+    cpy #$28           ; Check if Y has reached 40 (after 1000 bytes, because each screen line is 40 bytes)
+    bne clear_screen_loop ; If not, continue the loop
+
+    ; Bounds checking for cursor_h and cursor_clear_h
+    lda cursor_h
+    cmp #$08           ; Compare with $08, which is the high byte for address $0800 (end of screen memory)
+    bcc clear_screen_end ; If cursor_h is less, then it's okay
+    lda #$00           ; Otherwise, reset cursor_h to $00
+
+    lda cursor_clear_h
+    cmp #$08           ; Compare with $08, the high byte for address $D800 + 1000 bytes (end of color memory)
+    bcc clear_screen_end ; If cursor_clear_h is less, then it's okay
+    lda #$00           ; Otherwise, reset cursor_clear_h to $00
+
+clear_screen_end:
+    rts                ; Return from subroutine
+
 
 videoloop
       lda #0
@@ -87,13 +105,21 @@ videoloop
       rts
 
 init_starfield
-      ldx #0
+    ldx #0
 next_star
-      jsr init_star
-      inx
-      cpx #size
-      bcc next_star
-      rts
+    ; Set initial positions within screen bounds
+    lda #0
+    sta x_pos, x
+    sta x_pos_h, x ; Assuming x_pos_h is meant to handle overflow from x_pos
+    lda #0
+    sta y_pos, x
+    ; Now call init_star to set initial values
+    jsr init_star
+    inx
+    cpx #size
+    bcc next_star
+    rts
+
 
 draw_stars
       ldy #0
@@ -403,48 +429,56 @@ y_low_mul
     tay               ; Transfer it to Y
     rts               ; Return from the subroutine
 
+; The set_color subroutine is responsible for setting the color of a star.
+; It calculates the color memory address based on the star's position and
+; ensures that the address falls within the valid color memory range.
 set_color
-    lda y_pos, y ; / 8 
-    lsr 
-    lsr 
-    lsr 
-    tax
-    lda y_screen_h, x ; Lookup *40 table
-    sta color_h
-    lda y_screen, x
-    sta color
-    lda x_pos_h, y ; / 8
-    lsr ; (x < 320)
-    lda x_pos, y
-    ror
+    lda y_pos, y       ; Load the Y position of the star
+    lsr                ; Divide by 8 to get the row
     lsr
     lsr
+    tax                ; Transfer to X to use as an offset in the lookup table
+
+    lda y_screen_h, x  ; Get the high byte of the screen address from the table
+    sta color_h        ; Store it in color_h
+    lda y_screen, x    ; Get the low byte of the screen address from the table
+    sta color          ; Store it in color
+
+    lda x_pos_h, y     ; Get the high byte of the X position
+    lsr                ; Divide by 8 to check if X is less than 320
+    lda x_pos, y       ; Get the low byte of the X position
+    ror                ; Combine with the previous result
+    lsr
+    lsr                ; Adjust to the correct screen column
     clc
-    adc color
-    sta color
-    lda #04 ; Add final carry and $0400
-    adc color_h
-    sta color_h
-    lda y_pos, y ; Use low 4 bits for color
-    asl 
+    adc color          ; Add to the low byte of the screen address
+    sta color          ; Store it in color
+    lda #04            ; Set for the $0400 starting address
+    adc color_h        ; Add to the high byte of the screen address
+    and #$0f           ; Ensure it doesn't exceed the color memory range
+    sta color_h        ; Store it in color_h
+
+    lda y_pos, y       ; Use the low 4 bits of the Y position for color
+    asl
     asl
     asl
     asl
     cmp #0
-    bne save_color; Proceed for normal colors
-    lda #16 ; Set black stars to white
+    bne save_color     ; Proceed if not zero
+    lda #16            ; Set black stars to white for visibility
 save_color
-    sta screen_color
-    tya ; now set color in screen memory
-    pha
-    ldy #0
-    lda (color), y
-    and #%00001111
-    ora screen_color
-    sta (color), y
-    pla
-    tay
-    rts
+    sta screen_color   ; Store the color value for later use
+    tya                ; Transfer Y to A (cleanup from previous operations)
+    pha                ; Push A onto the stack to preserve the value
+    ldy #0             ; Reset Y to zero for indirect addressing
+    lda (color), y     ; Load the color memory at the calculated address
+    and #%00001111     ; Clear the upper 4 bits to set the new color
+    ora screen_color   ; Combine with the new color value
+    sta (color), y     ; Store the new color in color memory
+    pla                ; Restore the original A value from the stack
+    tay                ; Transfer A back to Y
+    rts                ; Return from subroutine
+
 
 x_bit_set
     !byte $80,$40,$20,$10,$08,$04,$02,$01
