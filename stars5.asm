@@ -31,21 +31,21 @@ move_loop
       jsr update_star_colors
       jsr check_exit_key  ; Check for exit condition
 vsync_wait
-    lda $d012
-    cmp #60            ; Check if raster line is at the top of the screen
-    bne vsync_wait     ; If not, keep waiting
-    rts                ; If yes, proceed with the code
+      lda $d012
+      cmp #$ff            ; Wait for the raster line to reach the vertical blank
+      bne vsync_wait      ; If not, keep waiting
+      rts                 ; If yes, proceed with the code
 
 init
-    lda $d018
-    ora #$8              ; Set video base to 8192
-    sta $d018
+      lda #$00
+      sta $d020           ; Set border color to black
+      sta $d021           ; Set background color to black
 
-    lda #0               ; Set accumulator to 0 (black)
-    sta $d020            ; Set border color to black
-    lda $d011
-    ora #$20            ; Set high-resolution mode
-    sta $d011
+      lda #%00001000
+      sta $d018           ; Set screen memory to $0400 and char gen to $1000
+
+      lda #%00111000
+      sta $d011           ; Set high-resolution mode and 25 rows
 
     ; Initialize variables
     lda #0               ; Set initial X coordinate
