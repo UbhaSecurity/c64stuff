@@ -93,6 +93,18 @@ clear_screen_loop:
 clear_screen_end:
   rts
 
+  ; Load the value of $D012 into the accumulator
+  lda $d012
+
+  ; Compare the accumulator with the VSYNC threshold (PAL system vertical blank)
+  cmp #$fb
+
+  ; If the comparison result is not equal (VSYNC not yet reached), keep waiting
+  bne vsync_wait
+
+  ; If the comparison result is equal (VSYNC reached), proceed with the code
+  rts
+
 videoloop
       lda #0
       sta (cursor), y
