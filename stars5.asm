@@ -17,6 +17,8 @@ y_pos = $1240 ; +32
 cursor_buffer = $1260 ; + 32
 cursor_buffer_h = $1280 ; + 32
 bitmask_buffer = $12a0 ; + 32
+cursor_h = $fc            ; High byte for cursor position, set to $04
+cursor_clear_h = $fe      ; High byte for cursor clear position, set to $04
 
 size = 32
 
@@ -36,6 +38,11 @@ vsync_wait
       rts                 ; If yes, proceed with the code
 
 init
+
+      lda #$04
+      sta cursor_h
+      sta cursor_clear_h
+
       lda #$00
       sta $d020           ; Set border color to black
       sta $d021           ; Set background color to black
@@ -126,6 +133,21 @@ save_cursor
       iny
       cpy #size
       bcc draw_star
+      rts
+
+update_positions
+      lda x_pos
+      cmp #40            ; Compare x_pos with 40
+      bcc x_pos_ok       ; If less, it's okay
+      lda #0             ; Reset x_pos to 0
+      sta x_pos
+      inc y_pos          ; Increment y_pos as we wrapped a line
+x_pos_ok
+      lda y_pos
+      cmp #25            ; Compare y_pos with 25
+      bcc y_pos_ok       ; If less, it's okay
+      lda #0             ; Reset y_pos to 0 (top of the screen)
+y_pos_ok
       rts
 
 move_stars
