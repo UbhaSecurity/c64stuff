@@ -77,18 +77,6 @@ videoloop
       jmp videoloop
       rts
 
-blank_screen
-    ldy #$FF       ; Initialize Y to 255 (FF in hexadecimal)
-    lda #16
-screenloop
-    sta $0400, Y
-    sta $0500, Y
-    sta $0600, Y
-    sta $0700, Y
-    dey            ; Decrement Y
-    bpl screenloop ; Branch if Y is positive (not 0xFF after decrementing from 0x00)
-    rts
-
 init_starfield
       ldx #0
 next_star
