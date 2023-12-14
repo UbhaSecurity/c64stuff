@@ -56,16 +56,17 @@ init
     rts
 
 blank_screen
-    ldx #$00       ; Initialize X to 0 for the low byte
-    ldy #$04       ; Initialize Y to $04 for the high byte
+    ldx #$00        ; Initialize X to 0
+    ldy #$00        ; Initialize Y to 0 (for the high byte)
 clear_loop:
-    lda #$20       ; Space character (clears the screen)
-    sta $0400,x    ; Write to screen memory
-    sta $d800,x    ; Write to color memory (use the correct color index)
+    lda #$20        ; Space character (clears the screen)
+    sta $0400,x     ; Write to screen memory
+    sta $d800,x     ; Write to color memory (use the correct color index)
     inx
-    bne clear_loop ; Branch if not end of page
-    inc $d020      ; Increment the high byte of color memory
-    cpy #$08       ; Compare Y with the high byte after 1000 bytes
+    bne clear_loop  ; Branch always due to page boundary crossing
+    inc cursor_h    ; Increment high byte of cursor for screen memory
+    inc cursor_clear_h    ; Increment high byte of cursor for color memory
+    cpy #$28        ; Compare Y with the high byte after 1000 bytes
     bne clear_loop
     rts
 
