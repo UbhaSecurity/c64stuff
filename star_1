@@ -454,4 +454,12 @@ x_bit_set
 x_bit_clear
     !byte $7F,$BF,$DF,$EF,$F7,$FB,$FD,$FE
 y_screen ; *40 lookup for screen memory
-    !byte $00,$28,$50,$78,$A
+    !byte $00,$28,$50,$78,$A0,$C8,$F0,$18
+    !byte $40,$68,$90,$B8,$E0,$08,$30,$58
+    !byte $80,$A8,$D0,$F8,$20,$48,$70,$98
+    !byte $C0
+y_screen_h
+    !byte $00,$00,$00,$00,$00,$00,$00,$01
+    !byte $01,$01,$01,$01,$01,$02,$02,$02
+    !byte $02,$02,$02,$02,$02,$03,$03,$03
+    !byte $03
