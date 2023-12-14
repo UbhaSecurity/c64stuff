@@ -28,11 +28,17 @@ size = 32
   jsr init_starfield
 
 move_loop:
+  ; Call subroutine to draw stars on the screen
   jsr draw_stars
+  ; Call subroutine to move stars based on their velocities
   jsr move_stars
+  ; Call subroutine to update star colors based on velocity
   jsr update_star_colors
+  ; Check for the exit condition
   jsr check_exit_key
+  ; Wait for vertical sync
   jsr vsync_wait
+  ; Return to the beginning of the loop
   rts
 
 init:
