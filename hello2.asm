@@ -107,14 +107,14 @@ ror ;Rotate right one final time
 
 ;Delay value for controlling star movement speed
 delay:
-.byte $0C
+!byte $0C
 
 ;Variables for star position
 starX:
-.byte $00
+!byte $00
 
 starY:
-.byte $00
+!byte $00
 
 * = $9E00
 
