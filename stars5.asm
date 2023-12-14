@@ -446,21 +446,6 @@ save_color
     tay
     rts
 
-update_positions
-      lda x_pos
-      cmp #40            ; Compare x_pos with 40
-      bcc x_pos_ok       ; If less, it's okay
-      lda #0             ; Reset x_pos to 0
-      sta x_pos
-      inc y_pos          ; Increment y_pos as we wrapped a line
-x_pos_ok
-      lda y_pos
-      cmp #25            ; Compare y_pos with 25
-      bcc y_pos_ok       ; If less, it's okay
-      lda #0             ; Reset y_pos to 0 (top of the screen)
-y_pos_ok
-      rts
-
 x_bit_set
     !byte $80,$40,$20,$10,$08,$04,$02,$01
 x_bit_clear
