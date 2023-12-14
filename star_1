@@ -1,4 +1,4 @@
-*=$0801
+* = $0801  ; Set the start address
 !byte $0c,$08,$0a,$00,$9e,$20,$32,$33,$30,$34,$00,$00,$00 ; BASIC auto start at $0900 
 
 screen_color = $f7
