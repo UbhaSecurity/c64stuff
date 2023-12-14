@@ -57,16 +57,12 @@ init
 
 blank_screen
     ldx #$00       ; Initialize X to 0
-    ldy #$00       ; Initialize Y to 0
 clear_loop:
     lda #$20       ; Space character (clears the screen)
     sta $0400,x    ; Write to screen memory
     sta $d800,x    ; Write to color memory (use the correct color index)
     inx
     bne clear_loop ; Branch always due to page boundary crossing
-    inc cursor_h   ; Increment high byte of cursor
-    cpy #$28       ; Compare Y with the number of rows (40 columns per row)
-    bne clear_loop
     rts
 
 videoloop
