@@ -362,22 +362,6 @@ no_carry
     sta $d1             ; Store in CIA 1 data port B (keyboard matrix row)
     rts                 ; Return from subroutine
 
-; Routine to set the cursor position
-; X-register: X-coordinate (0-39)
-; Y-register: Y-coordinate (0-24)
-
-set_cursor
-    sty $d6             ; Store Y-coordinate in temporary location
-    tya                 ; Transfer Y-coordinate to accumulator
-    asl                 ; Multiply Y by 2
-    asl                 ; Multiply Y by 4 (total Y*8)
-    clc                 ; Clear carry for addition
-    adc $d6             ; Add original Y (total Y*8 + Y = Y*9)
-    tax                 ; Transfer result to X-register
-    lda #0              ; Clear accumulator for multiplication
-    ldy #40             ; Set Y for multiplication by 40 (row width
-
-
 ; 8-bit multiplication subroutine
 ; Multiplies A by Y, result in A (low byte) and X (high byte)
 mul_8bit
