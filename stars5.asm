@@ -17,8 +17,6 @@ y_pos = $1240 ; +32
 cursor_buffer = $1260 ; + 32
 cursor_buffer_h = $1280 ; + 32
 bitmask_buffer = $12a0 ; + 32
-cursor_h = $fc            ; High byte for cursor position, set to $04
-cursor_clear_h = $fe      ; High byte for cursor clear position, set to $04
 
 size = 32
 
@@ -38,7 +36,6 @@ vsync_wait
       rts                 ; If yes, proceed with the code
 
 init
-
       lda #$04
       sta cursor_h
       sta cursor_clear_h
@@ -158,9 +155,7 @@ move_next_star
        clc
        adc velocity, x
        sta x_pos, x
-       lda x_pos_h, x
-       adc #0
-       sta x_pos_h, x
+       jsr update_positions  ; Ensure x_pos and y_pos are within bounds
        inx
        cpx #size
        bcc move_next_star
@@ -450,6 +445,21 @@ save_color
     pla
     tay
     rts
+
+update_positions
+      lda x_pos
+      cmp #40            ; Compare x_pos with 40
+      bcc x_pos_ok       ; If less, it's okay
+      lda #0             ; Reset x_pos to 0
+      sta x_pos
+      inc y_pos          ; Increment y_pos as we wrapped a line
+x_pos_ok
+      lda y_pos
+      cmp #25            ; Compare y_pos with 25
+      bcc y_pos_ok       ; If less, it's okay
+      lda #0             ; Reset y_pos to 0 (top of the screen)
+y_pos_ok
+      rts
 
 x_bit_set
     !byte $80,$40,$20,$10,$08,$04,$02,$01
