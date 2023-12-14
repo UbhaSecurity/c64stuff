@@ -90,6 +90,9 @@ clear_screen_loop:
 
   lda #$00 ; Reset cursor_clear_h
 
+clear_screen_end:
+  rts
+
 vsync_wait:
   ; Load the value of $D012 into the accumulator
   lda $d012
