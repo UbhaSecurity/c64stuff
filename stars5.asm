@@ -22,7 +22,6 @@ size = 32
 
 *=$0900
       jsr init     
-      jsr blank_video
       jsr blank_screen
       jsr init_starfield
 move_loop
@@ -32,7 +31,7 @@ move_loop
       jsr check_exit_key  ; Check for exit condition
 vsync_wait
       lda $d012
-      cmp #$ff            ; Wait for the raster line to reach the vertical blank
+      cmp #$fb            ; PAL system vertical blank is around raster line 251
       bne vsync_wait      ; If not, keep waiting
       rts                 ; If yes, proceed with the code
 
@@ -41,14 +40,14 @@ init
       sta $d020           ; Set border color to black
       sta $d021           ; Set background color to black
 
-      lda #%00001000
-      sta $d018           ; Set screen memory to $0400 and char gen to $1000
+      lda #%00010000      ; Set screen memory to $0400 and char gen to $1000
+      sta $d018
 
-      lda #%00111000
-      sta $d011           ; Set high-resolution mode and 25 rows
+      lda #%00110111
+      sta $d011           ; Set high-resolution mode and 25 rows for a PAL system
 
     ; Initialize variables
-    lda #0               ; Set initial X coordinate
+    lda #0
     sta cursor           ; Set cursor to point to the start of the screen memory
     lda #0
     sta cursor_h         ; Set cursor_h high byte to 0 (since we're using low-res)
@@ -56,22 +55,19 @@ init
 
     rts
 
-blank_video
-    ldy #0               ; Initialize Y to 0
-    lda #32               ; Load the space character (PETSCII code)
-    ldx #0               ; Initialize X to 0
-    lda #0                ; Load accumulator with 0 (clear screen attribute)
-    jsr $FFD2            ; Call KERNAL routine to output character
-    iny                  ; Increment Y (move to the next row)
-    cpy #25              ; Check if we've cleared all 25 rows (adjust as needed)
-    bcc blank_video      ; Repeat until all rows are cleared
+blank_screen
+    ldx #$00       ; Initialize X to 0
+    ldy #$00       ; Initialize Y to 0
+clear_loop:
+    lda #$20       ; Space character (clears the screen)
+    sta $0400,x    ; Write to screen memory
+    sta $d800,x    ; Write to color memory (use the correct color index)
+    inx
+    bne clear_loop ; Branch always due to page boundary crossing
+    inc cursor_h   ; Increment high byte of cursor
+    cpy #$28       ; Compare Y with the number of rows (40 columns per row)
+    bne clear_loop
     rts
-
-; Clear screen subroutine
-clear_screen
-    lda #$93           ; Load the 'Clear Screen' PETSCII code
-    jsr $FFD2          ; Call the KERNAL routine to output character
-    rts                ; Return from subroutine
 
 videoloop
       lda #0
